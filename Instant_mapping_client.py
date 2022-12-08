@@ -1,8 +1,8 @@
 import socket
 import time
 import sys
-esp_ip = "192.168.137.16"
-esp_port = 80
+esp_ip = "192.168.137.232"
+esp_port = 54080
 
 print("Starting socket: TCP...")
 addr = (esp_ip, esp_port)
@@ -17,7 +17,8 @@ while True:
         print("Can't connect to server,try it latter!")
         time.sleep(1)
         continue
-print("Connected!")
+print("Connected!", addr)
+
 
 import numpy as np
 import matplotlib as mpl
@@ -31,31 +32,39 @@ import math
 
 fig = plt.figure(figsize = (10, 8))
 raw_data = []
-for i in range(0, 48):
+for i in range(0, 37):
     raw_data.append(0)
-pos = np.array([0,0,0,1])
 center = 3
-speed = np.array([0.1,0.4,0.7,1])
-yposition = np.array([-2.598,-2.598,-2.598,-2.598,-1.732,-1.732,-1.732,-1.732,-1.732,-0.866,-0.866,-0.866,-0.866,-0.866,-0.866,0,0,0,0,0,0,0,0.866,0.866,0.866,0.866,0.866,0.866,1.732,1.732,1.732,1.732,1.732,2.598,2.598,2.598,2.598])
-xposition = np.array([-1.5,-0.5,0.5,1.5,-2,-1,0,1,2,-2.5,-1.5,-0.5,0.5,1.5,2.5,-3,-2,-1,0,1,2,3,-2.5,-1.5,-0.5,0.5,1.5,2.5,-2,-1,0,1,2,-1.5,-0.5,0.5,1.5])
-mask = np.array([19,12,13,20,26,21,14,8,7,6,11,18,25,27,32,31,30,24,17,10,5,28,22,15,9,4,3,2,1,33,37,36,35,34,29,23,16])
-mask2 = np.array([37,36,35,34,33,25,26,27,28,29,30,31,32,24,23,22,21,20,19,18,17,9,10,11,12,13,14,15,16,8,7,6,5,4,3,2,1])
+y_pos = np.array([0,-0.5,0.5,1,0.5,2,1.5,1,0,-1,-1.5,-1,-0.5,1.5,1,0,-1,-1.5,-2,-2.5,-2,2.5,3,2.5,2,1.5,0.5,-0.5,-1.5,2,1.5,0.5,-0.5,-1.5,-2,-2.5,-3])
+x_pos = np.array([0,-0.866025404,-0.866025404,0,0.866025404,0,-0.866025404,-1.732050808,-1.732050808,-1.732050808,-0.866025404,0,0.866025404,0.866025404,1.732050808,1.732050808,1.732050808,0.866025404,0,-0.866025404,-1.732050808,0.866025404,0,-0.866025404,-1.732050808,-2.598076211,-2.598076211,-2.598076211,-2.598076211,1.732050808,2.598076211,2.598076211,2.598076211,2.598076211,1.732050808,0.866025404,0])
 cur_nA = np.zeros(37)
+sum_cur = 0
+center_x = 0
+center_y = 0
 def str_to_arr():
+    global sum_cur, center_x, center_y
+    sum_cur = 0
+    center_x = 0
+    center_y = 0
     for i in range(0, 37):
-        cur_nA[mask[i] - 1] = int(raw_data[mask2[i] - 1])/ 2000
+        cur_nA[i] = (int(raw_data[i]) - 100000)/ 2000
+        sum_cur += cur_nA[i]
+        center_x += cur_nA[i] * x_pos[i]
+        center_y += cur_nA[i] * y_pos[i]
+    center_x /= sum_cur
+    center_y /= sum_cur
 
-def currentMap(xp, yp, current):
+def currentMap(xp, yp, current, cx, cy):
     ax1 = fig.add_subplot(1,1,1)    # 子图设置(x，y, No.)
     ax1.axis('off')    # 无边框
-    im = ax1.scatter(xp,yp,s = 1600, c = current, cmap = "Blues", alpha = 0.6, marker = "h")
+    im = ax1.scatter(cx, cy, s = 150, c = 'r', marker = 'o')
+    im = ax1.scatter(xp, yp, s = 1600, c = current, cmap = "Blues", alpha = 0.6, marker = "H")
     cbar = ax1.figure.colorbar(im, ax=ax1)
     cbar.ax.set_ylabel("On-off ratio", rotation=-90, va="bottom")
     plt.ylim((-6, 6))
     plt.xlim((-6, 6))
     ax = plt.gca()
     ax.set_aspect(1)
-    ##plt.show()
 
 while True:
     msg = 'next'
@@ -67,12 +76,12 @@ while True:
     socket_tcp.send(msg.encode('utf-8'))
     str_data = (rmsg.decode('utf-8'))[3:-3]
     raw_data = str_data.split('.')
+
     str_to_arr()
+    print(cur_nA)
     plt.ioff()
     plt.clf()
-    print(cur_nA[15])
-    currentMap(xposition, yposition, cur_nA)
+    currentMap(x_pos, y_pos, cur_nA, center_x, center_y)
     plt.pause(0.1)
 
 socket_tcp.close()
-
