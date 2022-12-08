@@ -13,16 +13,17 @@ import gc
 gc.collect()
 
 # Sampling setting
-sample_per_pixel = 50
-reject_first_samples = 10
+sample_per_pixel = 200
+reject_first_samples = 100
 sampling_interval = 10 # in microseconds
-interval_between_pixel = 10 # in milliseconds
+waiting_time = 10 # in milliseconds
+blank_sampling = 50
 
 # Network setting
 ssid = 'MyESP32'
 password = '12345678'
-host_ip = '192.168.137.16'
-host_port = 80
+host_ip = '192.168.137.232'
+host_port = 54080
 
 station = network.WLAN(network.STA_IF)
 station.active(True)
@@ -48,7 +49,7 @@ A3 = Pin(32, Pin.OUT)
 M1 = Pin(27, Pin.OUT)
 M2 = Pin(14, Pin.OUT)
 M3 = Pin(13, Pin.OUT)
-PD_Cur = ADC(Pin(36, Pin.IN), atten = ADC.ATTN_11DB)
+PD_Cur = ADC(Pin(36, Pin.IN), atten = ADC.ATTN_0DB)
 
 sarr = ''
 pd_data = []
@@ -77,16 +78,19 @@ def scan():
         elif mux == 2:
             select_mux(0, 0, 1)
         select_channel(1 & (pixel >> 0), 1 & (pixel >> 1), 1 & (pixel >> 2), 1 & (pixel >> 3))
+        time.sleep_ms(waiting_time)
         cache = 0
         for j in range (0, sample_per_pixel + reject_first_samples):
             if j >= reject_first_samples:
                 cache += PD_Cur.read_uv()
             time.sleep_us(sampling_interval)
         pd_data[i - 4] = int(cache / sample_per_pixel)
-        ## set to floating
+        
         select_mux(0, 0, 1)
         select_channel(1, 0, 1, 0)
-        time.sleep_ms(interval_between_pixel)
+        for j in range (0, blank_sampling):
+            time.sleep_us(sampling_interval)
+
         
 
 def list_to_str():
@@ -106,8 +110,8 @@ while True:
         if request.decode('utf-8') == 'next':
             scan()
             list_to_str()
+            print(sarr)
             conn.send(sarr.encode('utf-8'))
         else:
             time.sleep_us(100)
         continue
-
