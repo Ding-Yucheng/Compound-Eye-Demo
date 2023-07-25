@@ -55,8 +55,8 @@ def str_to_arr():
     center_y /= sum_cur
 
 def currentMap(xp, yp, current, cx, cy):
-    ax1 = fig.add_subplot(1,1,1)    # 子图设置(x，y, No.)
-    ax1.axis('off')    # 无边框
+    ax1 = fig.add_subplot(1,1,1) 
+    ax1.axis('off') 
     im = ax1.scatter(cx, cy, s = 150, c = 'r', marker = 'o')
     im = ax1.scatter(xp, yp, s = 1600, c = current, cmap = "Blues", alpha = 0.6, marker = "H")
     cbar = ax1.figure.colorbar(im, ax=ax1)
