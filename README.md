@@ -1,4 +1,5 @@
-# Compound-Eye-Demo
+
+# 1. Moving-Detection
 
 An instant object tracking demonstration with our compound eye realized in DJI Tello.
 
