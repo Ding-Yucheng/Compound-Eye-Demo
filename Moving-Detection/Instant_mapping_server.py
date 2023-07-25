@@ -5,7 +5,6 @@ import usocket as socket
 import time
 from machine import ADC
 from machine import Pin
-from machine import ADC
 import network
 import esp
 esp.osdebug(None)
